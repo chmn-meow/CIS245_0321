@@ -8,6 +8,13 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+Include/
+.vscode/
+Scripts/
+*/scripts/*
+*/scripts
+scripts/
+misc/
 build/
 develop-eggs/
 dist/
@@ -23,6 +30,7 @@ wheels/
 pip-wheel-metadata/
 share/python-wheels/
 *.egg-info/
+*.code-workspace
 .installed.cfg
 *.egg
 MANIFEST
@@ -83,6 +91,7 @@ ipython_config.py
 
 # pyenv
 .python-version
+pyvenv.cfg
 
 # pipenv
 #   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
