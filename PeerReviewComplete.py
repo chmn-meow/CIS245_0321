@@ -44,5 +44,4 @@ while play_again == "yes" or play_again == "y":
 
     print("Do you want to play again? (yes or no)")
     play_again = input()
-    if play_again == "no" or play_again == "n":
-        print("Thanks for playing!")
+print("Thanks for playing!")
