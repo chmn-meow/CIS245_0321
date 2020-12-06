@@ -1135,12 +1135,4 @@ while not menu.end_program:
     while menu.navigating:
         menu.navigate()
 
-    in_garage = False
-    while in_garage:
-        pass
-
-    doing_cars = False
-    while doing_cars:
-        pass
-
     end_program = True
