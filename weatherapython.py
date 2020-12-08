@@ -28,7 +28,145 @@ API = str(os.environ.get("API"))
 CITY = str(os.environ.get("CITYID"))
 
 
+class Menu:
+    def __init__(self, name, master_menu=dict):
+        self.current = name
+        self.master_menu = master_menu
+        self.top = True
+        self.treed = False
+        self.tree_lvl = 0
+        self.parent = None
+        self.sub_parent = None
+        self.curr_menu = self.master_menu[self.current]
+        self.navigating = False
+        self.end_program = False
+        self.options = self.master_menu[self.current].keys()
+
+    def navigate(self):
+        self.navigating = True
+        self.build_menu()
+        selection = input("Your selection?\n> ")
+        return self.select(selection)
+
+    def select(self, selection):
+        try:
+            sel = int(selection)
+            itr = 0
+            if sel == itr or itr < 0:
+                raise ValueError
+            else:
+                for key, value in self.curr_menu.items():
+                    itr += 1
+                    if itr == sel:
+                        if isinstance(value, dict):
+                            if self.top:
+                                self.top = False
+                                self.treed = True
+                                self.tree_lvl = 1
+                                self.parent = self.current
+                                self.current = key
+                                self.curr_menu = value
+                            elif not self.top:
+                                self.tree_lvl = 2
+                                self.sub_parent = self.current
+                                self.current = key
+                                self.curr_menu = value
+                            return self.navigate()
+                        elif isinstance(value, str):
+                            if value == "upone" or value == "exit":
+                                if value == "upone":
+                                    if self.tree_lvl == 1:
+                                        self.top = True
+                                        self.treed = False
+                                        self.tree_lvl = 0
+                                        self.current = self.parent
+                                        self.parent = None
+                                        self.curr_menu = self.master_menu[self.current]
+                                    elif self.tree_lvl == 2:
+                                        self.tree_lvl = 1
+                                        self.current = self.sub_parent
+                                        self.sub_parent = None
+                                        self.curr_menu = self.master_menu[self.parent][
+                                            self.current
+                                        ]
+                                    return self.navigate()
+                                elif value == "exit":
+                                    return self.exit_program()
+                        elif callable(value):
+                            return value()
+                    elif itr > len(self.curr_menu.keys()):
+                        raise ValueError
+                    else:
+                        pass
+        except ValueError:
+            print(f"{selection} is not a number in the sequence! Try again.")
+            return self.navigate()
+        except TypeError:
+            print(
+                f"Your selection of {selection} was not recognized. Please try again."
+            )
+            return self.navigate()
+
+    def build_menu(self):
+        print(f"{self.current} Menu:")
+        if not self.treed:
+            mn = 1
+            for option in self.master_menu[self.current].keys():
+                print(f"[{mn}] : {option}")
+                mn += 1
+            return
+        elif self.treed:
+            if self.tree_lvl == 1:
+                mn = 1
+                for option in self.master_menu[self.parent].keys():
+                    print(f"[{mn}] : {option}")
+                    mn += 1
+                    if option == self.current:
+                        smn = 1
+                        for s_option in self.master_menu[self.parent][
+                            self.current
+                        ].keys():
+                            print(f"  ^-> [{smn}] : {s_option}")
+                            smn += 1
+                        return
+            elif self.tree_lvl == 2:
+                mn = 1
+                for option in self.master_menu[self.parent].keys():
+                    print(f"[{mn}] : {option}")
+                    mn += 1
+                    if option == self.sub_parent:
+                        smn = 1
+                        for s_option in self.master_menu[self.parent][
+                            self.sub_parent
+                        ].keys():
+                            print(f"  ^-> [{smn}] : {s_option}")
+                            smn += 1
+                            if s_option == self.current:
+                                ssmn = 1
+                                for ss_option in self.master_menu[self.parent][
+                                    self.sub_parent
+                                ][self.current].keys():
+                                    print(f"    ^-----> [{ssmn}] : {ss_option}")
+                                    ssmn += 1
+                                return
+
+    def exit_program(self):
+        msg = "Are you sure you'd like to exit the program?"
+        if get_yn(msg):
+            self.navigating = False
+            self.end_program = True
+            print("Exiting")
+            exit()
+        else:
+            return enter()
+
+
+def enter():
+    return input("Press [enter] to continue...")
+
+
 def flatten(current, key="", result={}):
+    # quick function to "flatten" the json to a singular k/v dictionary
     iter = 0
     if isinstance(current, dict):
         for k, v in current.items():
@@ -67,114 +205,53 @@ def scrape_data(
     return reorg, raw
 
 
-def fetch(
-    typ="",
-    prompt="\nType something\n",
-    err_msg="\nYour input didn't seem right, please try again.\n",
-    err=False,
-):
-    # prepare for while loop
-    bad_input = True
-
-    # check real quick if fetch called itself
-    if err:
-        print(err_msg)
-
-    # while loop makes sure we have something we want before moving on
-    while bad_input:
-
-        # we us try here to catch our errors
-        try:
-            # this is to handle all numbers
-            if typ == "float":
-                err_msg = "\nAre you sure you put in a number?\n"
-                inpt = float(input(prompt))
-                bad_input = False
-
-            # this is to handle single or double character answers for measurment abbreviations
-            elif typ == "chrs":
-                s_chrs = ["c", "n", "i", "d", "z", "p", "e", "x", "t"]
-                d_chrs = ["cn", "id", "ex"]
-                keywords = ["city", "name", "id", "zip", "code", "exit"]
-
-                inpt = (input(prompt)).lower()
-                if not inpt:
-                    err_msg = "\nYou didn't type anything!\n"
-                    raise ValueError
-                elif len(inpt) == 1 and s_chrs in inpt:
-                    if inpt == "c" or inpt == "n":
-                        return "city_name"
-                    elif inpt == "i":
-                        return "city_id"
-                    elif inpt == "z":
-                        return "zip_code"
-                    elif inpt == "x":
-                        return "exit_code"
-                    else:
-                        err_msg = "\nI'm not quite sure what you meant by that. Please try again.\n"
-                        raise ValueError
-                    bad_input = False
-
-                elif len(inpt) == 2 and d_chrs in inpt:
-                    if inpt == "cn":
-                        return "city_name"
-                    elif inpt == "id":
-                        return "city_id"
-                    elif inpt == "ex":
-                        return "exit_code"
-                    else:
-                        err_msg = f"\nDid you mean to type '{inpt}'?\n'"
-                        raise ValueError
-                elif len(inpt) >= 3 and keywords in inpt:
-                    if inpt == "":
-                        pass
-                    err_msg = "\nAre you sure you hit the right characters?\n"
-                    raise ValueError
-                else:
-                    bad_input = False
-
-            # this is to handle a simple yes/no question
-            elif typ == "yn":
-                inpt = input(prompt)
-                if not inpt:
-                    err_msg = "\nYou didn't type anything!\n"
-                    raise ValueError
-                elif len(inpt) > 1:
-                    err_msg = "\nPlease only type 'y' or 'n'.\n"
-                    raise ValueError
-                elif "y" not in inpt and "n" not in inpt:
-                    err_msg = "\nDid you hit the wrong key?\n"
-                    raise ValueError
-                else:
-                    bad_input = False
-
-            # this is to handle any other kinds of default input
-            else:
-                inpt = input(prompt)
-                bad_input = False
-
-        # catch the error(s) and call self
-        except ValueError:
-            err = True
-            return fetch(typ, prompt, err_msg, err)
-
-    # pass inpt back to caller
-    return inpt
+def get_yn(prompt):
+    # a simple function designed to handle a quick yes/no question
+    err = "I couldn't catch that. Let's do this again."
+    msg = input(f"{prompt} [y/n]\n> ")
+    if not msg:
+        return get_yn(err)
+    elif "y" in msg:
+        if msg == "y" or msg == "yes" or msg == "ya":
+            return True
+        else:
+            return get_yn(err)
+    elif "n" in msg:
+        if msg == "n" or msg == "no" or msg == "na":
+            return False
+        else:
+            return get_yn(err)
+    else:
+        return get_yn(err)
 
 
-# quick test/debug items
-# processed, raw_json = scrape_data()
-# print(f"\n\n{processed}")
-# print(f"\n\n{raw_json}")
-# print(flatten(raw))
+menu_dict = {
+    "Main": {
+        "View Current Locale": {
+            "View Current Weather": NotImplemented,
+            "View 5-day Forecast": NotImplemented,
+            "View Weather History": NotImplemented,
+            "Main Menu": "upone",
+            "Exit Program": "exit",
+        },
+        "Find New Locale": {
+            "Search By Name": NotImplemented,
+            "Search By Zip Code": NotImplemented,
+            "Main Menu": "upone",
+            "Exit Program": "exit",
+        },
+        "Exit Program": "exit",
+    }
+}
 
+menu = Menu("Main", menu_dict)
 # technically the beginning of the program
-print("Hello, and welcome to the WeatherAPython 2000!\n")
+print("Hello, and welcome to the Wx-APY-thon 2500!\n")
 
-# prepare actual meat of the program.
-end_program = False
-while not end_program:
-
-    ser_prompt = f"\nHow would you like to look up your weather?\nType 'c/n/cn/city/name/city name' for city name\nType 'i/id' for city id\nType 'z/zip' for zip code\ntype 'x/ex/exit' to quit.\nLookup: "
-
-    end_program = True
+# prepare program loop
+menu.end_program = False
+while not menu.end_program:
+    menu.navigating = True
+    while menu.navigating:
+        menu.navigate()
+    menu.end_program = True

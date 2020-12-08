@@ -1135,4 +1135,4 @@ while not menu.end_program:
     while menu.navigating:
         menu.navigate()
 
-    end_program = True
+    menu.end_program = True
