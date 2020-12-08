@@ -188,6 +188,8 @@ class Locale(object):
             r = requests.get(url, parameters)
             while r.status_code == requests.codes.ok:  # pylint: disable=no-member
                 data = json.loads(r.text)
+                q_print = json.dumps(data, indent=4)
+                print(q_print)
                 break
         except:
             print("We may have broken something...Hang on.")
