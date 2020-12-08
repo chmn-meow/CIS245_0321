@@ -25,10 +25,9 @@ from dotenv import load_dotenv, find_dotenv
 # load and define global constants
 load_dotenv(find_dotenv())
 API = str(os.environ.get("API"))
-CITY = str(os.environ.get("CITYID"))
 
 
-class Menu:
+class Menu(object):
     def __init__(self, name, master_menu=dict):
         self.current = name
         self.master_menu = master_menu
@@ -58,6 +57,7 @@ class Menu:
                 for key, value in self.curr_menu.items():
                     itr += 1
                     if itr == sel:
+                        # if it's a dictionary, it's a menu
                         if isinstance(value, dict):
                             if self.top:
                                 self.top = False
@@ -72,6 +72,7 @@ class Menu:
                                 self.current = key
                                 self.curr_menu = value
                             return self.navigate()
+                        # if it's a string, it's a menu command
                         elif isinstance(value, str):
                             if value == "upone" or value == "exit":
                                 if value == "upone":
@@ -92,6 +93,7 @@ class Menu:
                                     return self.navigate()
                                 elif value == "exit":
                                     return self.exit_program()
+                        # if it's a callable, it's a function
                         elif callable(value):
                             return value()
                     elif itr > len(self.curr_menu.keys()):
@@ -161,7 +163,39 @@ class Menu:
             return enter()
 
 
+class Locale(object):
+    # creating a locale object to store information
+    city_name = str(os.environ.get("CITYNAME"))
+    city_id = int(os.environ.get("CITYID"))
+
+    def __init__(self, json={}):
+        pass
+
+    def update(self, json={}):
+        pass
+
+    def scrape(self):
+        # this will be the primary API actor
+        parameters = {
+            "id": self.city_id,
+            "appid": API,
+            "units": "imperial",
+            "lang": "en",
+        }
+        url = "https://api.openweathermap.org/data/2.5/weather"
+
+        try:
+            r = requests.get(url, parameters)
+            while r.status_code == requests.codes.ok:  # pylint: disable=no-member
+                data = json.loads(r.text)
+                break
+        except:
+            print("We may have broken something...Hang on.")
+        return data
+
+
 def enter():
+    # just a stopper not tied to time.sleep
     return input("Press [enter] to continue...")
 
 
@@ -181,28 +215,6 @@ def flatten(current, key="", result={}):
     else:
         result[key] = current
     return result
-
-
-def scrape_data(
-    appid=API,
-    mode="",
-    units="imperial",
-    lang="en",
-    cityid=CITY,
-):
-
-    parameters = {"id": cityid, "appid": appid, "units": units, "lang": lang}
-    try:
-        json_request = requests.get(
-            "https://api.openweathermap.org/data/2.5/weather", parameters
-        )
-        raw = json.loads(json_request.text)
-        reorg = flatten(raw)
-
-    except:
-        print("Something happened...")
-
-    return reorg, raw
 
 
 def get_yn(prompt):
@@ -225,10 +237,11 @@ def get_yn(prompt):
         return get_yn(err)
 
 
+locale = Locale()
 menu_dict = {
     "Main": {
         "View Current Locale": {
-            "View Current Weather": NotImplemented,
+            "View Current Weather": locale.scrape,
             "View 5-day Forecast": NotImplemented,
             "View Weather History": NotImplemented,
             "Main Menu": "upone",
@@ -245,6 +258,7 @@ menu_dict = {
 }
 
 menu = Menu("Main", menu_dict)
+
 # technically the beginning of the program
 print("Hello, and welcome to the Wx-APY-thon 2500!\n")
 
