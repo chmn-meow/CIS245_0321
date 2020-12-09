@@ -19,6 +19,8 @@
 import os
 import requests
 import json
+import time
+import datetime
 
 from dotenv import load_dotenv, find_dotenv
 
@@ -168,11 +170,131 @@ class Locale(object):
     city_name = str(os.environ.get("CITYNAME"))
     city_id = int(os.environ.get("CITYID"))
 
-    def __init__(self, json={}):
-        pass
+    def __init__(self):
+        data = self.scrape()
+        self.update(data)
 
-    def update(self, json={}):
-        pass
+    def update(self, js):
+        timezone = 0
+        timestamp = 0
+        for key, value in js.items():
+            if isinstance(value, dict):
+                if key == "coord":
+                    for k, v in value.items():
+                        if k == "lon":
+                            self.long = v
+                        elif k == "lat":
+                            self.lat = v
+                        else:
+                            pass
+                    if self.long > 0:
+                        lon = "E"
+                    else:
+                        lon = "W"
+                    if self.lat > 0:
+                        lat = "N"
+                    else:
+                        lat = "S"
+                    self.coord = f"{self.lat} {lat}, {self.long} {lon}"
+                elif key == "main":
+                    for k, v in value.items():
+                        if k == "temp":
+                            self.temp = v
+                        elif k == "feels_like":
+                            self.feels = v
+                        elif k == "temp_min":
+                            self.min = v
+                        elif k == "temp_max":
+                            self.max = v
+                        elif k == "pressure":
+                            self.pressure = v
+                        elif k == "humidity":
+                            self.humidity = v
+                        else:
+                            pass
+                elif key == "wind":
+                    for k, v in value.items():
+                        if k == "speed":
+                            self.wind_speed = v
+                        elif k == "gust":
+                            self.gust = v
+                        elif k == "deg":
+                            self.deg = v
+                        else:
+                            pass
+                elif key == "clouds":
+                    self.cloudiness = value["all"]
+                elif key == "rain":
+                    self.rain = value
+                elif key == "snow":
+                    self.snow = value
+                elif key == "sys":
+                    self.concode = value["country"]
+                    s_timestamp = value["sunrise"]
+                    ss_timestamp = value["sunset"]
+                else:
+                    pass
+            elif isinstance(value, list):
+                if key == "weather":
+                    iter = 1
+                    self.weather = {}
+                    for dic in value:
+                        self.weather[iter] = {}
+                        for k, v in dic.items():
+                            self.weather[iter][k] = v
+                        iter += 1
+                else:
+                    pass
+            elif isinstance(value, str):
+                if key == "base":
+                    pass
+                elif key == "visibility":
+                    self.visibility = value
+                elif key == "dt":
+                    timestamp = value
+                elif key == "timezone":
+                    timezone = value
+                elif key == "id":
+                    self.city_id = value
+                elif key == "name":
+                    self.city_name = value
+                else:
+                    pass
+            elif isinstance(value, int):
+                pass
+            else:
+                pass
+        ts = timestamp - timezone
+        s = s_timestamp - timezone
+        ss = ss_timestamp - timezone
+        self.last_called = datetime.datetime.utcfromtimestamp(ts).strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
+        self.sunrise = datetime.datetime.utcfromtimestamp(s).strftime("%H:%M %p")
+        self.sunset = datetime.datetime.utcfromtimestamp(ss).strftime("%H:%M %p")
+        self.date, self.time = get_time()
+
+    def display_location(self):
+        print(f"Currently, our saved city is {self.city_name}.")
+        time.sleep(1)
+        print(f"The city of {self.city_name} is coded as Id#: {self.city_id}.")
+        time.sleep(1)
+        print(f"The lat-long is {self.coord}, which is in the {self.concode}.")
+        time.sleep(1)
+        enter()
+
+    def quick_weather(self):
+        time.sleep(0.5)
+        print(
+            f"It is currently {self.weather[1]['description']} in the {self.city_name} area. It is {self.temp} degrees, feeling like an average {self.feels} degrees."
+        )
+        time.sleep(0.5)
+        enter()
+
+    def display_weather(self):
+        time.sleep(0.5)
+        print(f"It is {self.time} on {self.date}.")
+        enter()
 
     def scrape(self):
         # this will be the primary API actor
@@ -188,8 +310,8 @@ class Locale(object):
             r = requests.get(url, parameters)
             while r.status_code == requests.codes.ok:  # pylint: disable=no-member
                 data = json.loads(r.text)
-                q_print = json.dumps(data, indent=4)
-                print(q_print)
+                with open("weather.json", "w") as f:
+                    json.dump(data, f, indent=4)
                 break
         except:
             print("We may have broken something...Hang on.")
@@ -199,6 +321,17 @@ class Locale(object):
 def enter():
     # just a stopper not tied to time.sleep
     return input("Press [enter] to continue...")
+
+
+def get_time():
+    utc_dt_aware = datetime.datetime.now(datetime.timezone.utc)
+    timezone = datetime.timedelta(hours=-6)
+    ct = utc_dt_aware + timezone
+    dte = ct.strftime("%A, %B %d")
+    tm = ct.time()
+    tme = tm.strftime("%I:%m %p")
+
+    return dte, tme
 
 
 def flatten(current, key="", result={}):
@@ -239,11 +372,13 @@ def get_yn(prompt):
         return get_yn(err)
 
 
-locale = Locale()
+local = Locale()
 menu_dict = {
     "Main": {
+        "Quick Weather": local.quick_weather,
         "View Current Locale": {
-            "View Current Weather": locale.scrape,
+            "View Locale Information": local.display_location,
+            "View Today's Detailed Forecast": local.display_weather,
             "View 5-day Forecast": NotImplemented,
             "View Weather History": NotImplemented,
             "Main Menu": "upone",
