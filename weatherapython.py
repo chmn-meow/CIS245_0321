@@ -20,7 +20,7 @@ import os
 import requests
 import json
 import time
-import datetime
+from datetime import datetime
 
 from dotenv import load_dotenv, find_dotenv
 
@@ -169,13 +169,13 @@ class Locale(object):
     # creating a locale object to store information
     city_name = str(os.environ.get("CITYNAME"))
     city_id = int(os.environ.get("CITYID"))
+    gust = None
 
     def __init__(self):
         data = self.scrape()
         self.update(data)
 
     def update(self, js):
-        timezone = 0
         timestamp = 0
         for key, value in js.items():
             if isinstance(value, dict):
@@ -219,7 +219,40 @@ class Locale(object):
                         elif k == "gust":
                             self.gust = v
                         elif k == "deg":
-                            self.deg = v
+                            if v > 348.75 or v <= 11.25:
+                                self.wind_dir = "Northerly"
+                            elif v > 11.25 and v <= 33.75:
+                                self.wind_dir = "North-North-Easterly"
+                            elif v > 33.75 and v <= 56.25:
+                                self.wind_dir = "North-Easterly"
+                            elif v > 56.25 and v <= 78.75:
+                                self.wind_dir = "East-North-Easterly"
+                            elif v > 78.75 and v <= 101.25:
+                                self.wind_dir = "Easterly"
+                            elif v > 101.25 and v <= 123.75:
+                                self.wind_dir = "East-South-Easterly"
+                            elif v > 123.75 and v <= 146.25:
+                                self.wind_dir = "South-Easterly"
+                            elif v > 146.25 and v <= 168.75:
+                                self.wind_dir = "South-South-Easterly"
+                            elif v > 168.75 and v <= 191.25:
+                                self.wind_dir = "Southerly"
+                            elif v > 191.25 and v <= 213.75:
+                                self.wind_dir = "South-South-Westerly"
+                            elif v > 213.75 and v <= 236.25:
+                                self.wind_dir = "South-Westerly"
+                            elif v > 236.25 and v <= 258.75:
+                                self.wind_dir = "West-South-Westerly"
+                            elif v > 258.75 and v <= 281.25:
+                                self.wind_dir = "Westerly"
+                            elif v > 281.25 and v <= 303.75:
+                                self.wind_dir = "West-North-Westerly"
+                            elif v > 303.75 and v <= 326.25:
+                                self.wind_dir = "North-Westerly"
+                            elif v > 326.25 and v <= 348.75:
+                                self.wind_dir = "North-West-Northerly"
+                            else:
+                                self.wind_dir = "That-way-ish-ly"
                         else:
                             pass
                 elif key == "clouds":
@@ -248,52 +281,78 @@ class Locale(object):
             elif isinstance(value, str):
                 if key == "base":
                     pass
-                elif key == "visibility":
-                    self.visibility = value
-                elif key == "dt":
-                    timestamp = value
-                elif key == "timezone":
-                    timezone = value
-                elif key == "id":
-                    self.city_id = value
                 elif key == "name":
                     self.city_name = value
                 else:
                     pass
             elif isinstance(value, int):
-                pass
+                if key == "visibility":
+                    self.visibility = value // 1000
+                elif key == "dt":
+                    timestamp = value
+                elif key == "timezone":
+                    pass
+                elif key == "id":
+                    self.city_id = value
+                else:
+                    pass
             else:
                 pass
-        ts = timestamp - timezone
-        s = s_timestamp - timezone
-        ss = ss_timestamp - timezone
-        self.last_called = datetime.datetime.utcfromtimestamp(ts).strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
-        self.sunrise = datetime.datetime.utcfromtimestamp(s).strftime("%H:%M %p")
-        self.sunset = datetime.datetime.utcfromtimestamp(ss).strftime("%H:%M %p")
+        ts = timestamp
+        s = s_timestamp
+        ss = ss_timestamp
+        self.last_called = datetime.utcfromtimestamp(ts).strftime("%Y-%m-%d %H:%M:%S")
+        self.sunrise = datetime.fromtimestamp(s).strftime("%I:%M %p")
+        self.sunset = datetime.fromtimestamp(ss).strftime("%I:%M %p")
         self.date, self.time = get_time()
 
     def display_location(self):
         print(f"Currently, our saved city is {self.city_name}.")
-        time.sleep(1)
+        time.sleep(0.3)
         print(f"The city of {self.city_name} is coded as Id#: {self.city_id}.")
-        time.sleep(1)
+        time.sleep(0.3)
         print(f"The lat-long is {self.coord}, which is in the {self.concode}.")
-        time.sleep(1)
+        time.sleep(0.3)
         enter()
 
     def quick_weather(self):
-        time.sleep(0.5)
+        time.sleep(0.3)
         print(
             f"It is currently {self.weather[1]['description']} in the {self.city_name} area. It is {self.temp} degrees, feeling like an average {self.feels} degrees."
         )
-        time.sleep(0.5)
+        time.sleep(0.3)
         enter()
 
     def display_weather(self):
-        time.sleep(0.5)
-        print(f"It is {self.time} on {self.date}.")
+        time.sleep(0.3)
+        print(f"It is {self.time} in {self.city_name} on {self.date}.\n")
+        time.sleep(0.3)
+        print(
+            f"We have {self.weather[1]['description']} with a temperature of {self.temp} degrees.\n"
+        )
+        time.sleep(0.3)
+        print(f"The high for today is {self.max} with a low of {self.min} degrees.\n")
+        time.sleep(0.3)
+        print(
+            f"Humidity is at {self.humidity}% with an atmospheric pressure of {self.pressure} hPa.\n"
+        )
+        time.sleep(0.3)
+        if self.gust:
+            gusts = f"Gusts are up to {self.gust} mpg."
+        else:
+            gusts = "There are no gusts at this hour."
+        print(
+            f"We have a {self.wind_dir} wind blowing at {self.wind_speed} mph. {gusts}\n"
+        )
+        time.sleep(0.3)
+        print(
+            f"Cloud cover is at {self.cloudiness}%, and visibility is pegged at approximately {self.visibility} km.\n"
+        )
+        time.sleep(0.3)
+        print(
+            f"Expected sunrise and sunset times today are {self.sunrise} and {self.sunset}, respectively.\n"
+        )
+        time.sleep(0.3)
         enter()
 
     def scrape(self):
@@ -324,12 +383,9 @@ def enter():
 
 
 def get_time():
-    utc_dt_aware = datetime.datetime.now(datetime.timezone.utc)
-    timezone = datetime.timedelta(hours=-6)
-    ct = utc_dt_aware + timezone
-    dte = ct.strftime("%A, %B %d")
-    tm = ct.time()
-    tme = tm.strftime("%I:%m %p")
+    dt = datetime.now()
+    dte = dt.strftime("%A, %B %d")
+    tme = dt.strftime("%I:%m %p")
 
     return dte, tme
 
@@ -350,6 +406,13 @@ def flatten(current, key="", result={}):
     else:
         result[key] = current
     return result
+
+
+def not_implemented():
+    print(
+        "Sorry, that feature hasn't been built-out yet. Check back, and it may be.\nCheers!"
+    )
+    enter()
 
 
 def get_yn(prompt):
@@ -379,14 +442,14 @@ menu_dict = {
         "View Current Locale": {
             "View Locale Information": local.display_location,
             "View Today's Detailed Forecast": local.display_weather,
-            "View 5-day Forecast": NotImplemented,
-            "View Weather History": NotImplemented,
+            "View 5-day Forecast": not_implemented,
+            "View Weather History": not_implemented,
             "Main Menu": "upone",
             "Exit Program": "exit",
         },
         "Find New Locale": {
-            "Search By Name": NotImplemented,
-            "Search By Zip Code": NotImplemented,
+            "Search By Name": not_implemented,
+            "Search By Zip Code": not_implemented,
             "Main Menu": "upone",
             "Exit Program": "exit",
         },
@@ -397,7 +460,7 @@ menu_dict = {
 menu = Menu("Main", menu_dict)
 
 # technically the beginning of the program
-print("Hello, and welcome to the Wx-APY-thon 2500!\n")
+print("\n\nHello, and welcome to the Wx-APY-thon 2500!\n")
 
 # prepare program loop
 menu.end_program = False

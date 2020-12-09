@@ -1,21 +1,12 @@
-import datetime
+from datetime import datetime
+import time
 
-today = datetime.datetime.now()
-# timezone = datetime.timedelta(hours=-6)
-# corrected_time = utc_dt_aware + timezone
-updt = today.strftime("%A, %B, %d")
-day = today.day
-month = today.month
-tm = today.time()
-tme = tm.strftime("%I:%m %p")
+dt = datetime.now()
+today = dt.strftime("%A, %B %d")
+day = dt.strftime("%A")
+tyme = dt.strftime("%I:%M %p")
 
-timestamp = 1607470253
-last_called = datetime.datetime.fromtimestamp(timestamp)
+timestamp = 1607556781
+last_called = datetime.fromtimestamp(timestamp).strftime("%I:%M %p on %A, %B %d")
 
-
-print(today)
-print(updt)
-print(day)
-print(month)
-print(tm)
-print(tme)
+print(last_called)
