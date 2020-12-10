@@ -3,7 +3,6 @@ import requests
 import json
 import time
 from datetime import datetime
-from dateutil import tz
 from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())

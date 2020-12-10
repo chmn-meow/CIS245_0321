@@ -181,7 +181,6 @@ class Locale(object):
 
     def update(self, js):
         # takes the unparsed scrape and fits it to our object
-        timestamp = 0
         if not js:
             print(f"And more errors.  Connect to the internet, maybe?")
         else:
@@ -271,8 +270,8 @@ class Locale(object):
                         self.snow = value
                     elif key == "sys":
                         self.concode = value["country"]
-                        s_timestamp = value["sunrise"]
-                        ss_timestamp = value["sunset"]
+                        utc_sunrise = value["sunrise"]
+                        utc_sunset = value["sunset"]
                     else:
                         pass
                 elif isinstance(value, list):
@@ -297,24 +296,24 @@ class Locale(object):
                     if key == "visibility":
                         self.visibility = value // 1000
                     elif key == "dt":
-                        timestamp = value
+                        utc_call = value
                     elif key == "timezone":
-                        pass
+                        timezone = value
                     elif key == "id":
                         self.city_id = value
                     else:
                         pass
                 else:
                     pass
-            ts = timestamp
-            s = s_timestamp
-            ss = ss_timestamp
+            ts = utc_call + timezone
+            s = utc_sunrise + timezone
+            ss = utc_sunset + timezone
             self.last_called = datetime.utcfromtimestamp(ts).strftime(
                 "%Y-%m-%d %H:%M:%S"
             )
-            self.sunrise = datetime.fromtimestamp(s).strftime("%I:%M %p")
-            self.sunset = datetime.fromtimestamp(ss).strftime("%I:%M %p")
-            self.date, self.time = get_time()
+            self.sunrise = datetime.utcfromtimestamp(s).strftime("%I:%M %p")
+            self.sunset = datetime.utcfromtimestamp(ss).strftime("%I:%M %p")
+            self.date, self.time = get_time(timezone)
 
     def display_location(self):
         # this will display currently active location's data
@@ -369,27 +368,185 @@ class Locale(object):
         enter()
 
     def name_search(self):
+        # named search handler
+        msg = "Are you looking up a city in the US?"
+        if get_yn(msg):
 
-        city = input(werder("cin"))
-        while not city:
             city = input(werder("cin"))
-        state = input(werder("sin"))
-        while len(state) > 2 or not state:
+            while not city:
+                city = input(werder("cin"))
             state = input(werder("sin"))
-        country = input(werder("coin"))
-        while len(country) > 2 or not country:
+            while len(state) > 2 or not state:
+                state = input(werder("sin"))
+            country = "us"
+
+            query = f"{city.title()}, {state.upper()}, {country.upper()}"
+            verify = get_yn(f"You said {query}, is that right?")
+
+            if verify:
+                self.search = True
+                self.s_type = "name"
+                self.query = query
+                data = self.scrape()
+                self.update(data)
+                self.display_weather()
+                self.search = False
+            else:
+                return
+        else:
+            city = input(werder("cin"))
+            while not city:
+                city = input(werder("cin"))
             country = input(werder("coin"))
+            while len(country) > 2 or not country:
+                country = input(werder("coin"))
 
-        query = f"{city.title()}, {state.upper()}, {country.upper()}"
+            query = f"{city.title()}, {country.upper()}"
+            verify = get_yn(f"You said {query}, is that right?")
+
+            if verify:
+                self.search = True
+                self.s_type = "name"
+                self.query = query
+                data = self.scrape()
+                self.update(data)
+                self.display_weather()
+                self.search = False
+            else:
+                return
+
+    def cid_search(self):
+        # city id # search handler thing
+        cid = input(werder("cid"))
+        while not cid:
+            cid = input(werder("cid"))
+
+        try:
+            int(cid)
+        except ValueError:
+            print("Sorry, you didn't type only numbers for that.  Please try again!")
+            return self.zip_search()
+        query = f"{cid}"
         verify = get_yn(f"You said {query}, is that right?")
-
         if verify:
             self.search = True
-            self.s_type = "name"
+            self.s_type = "id"
             self.query = query
             data = self.scrape()
-            self.update(data)
-            self.display_weather()
+            if not data:
+                print("Huh, normally that works...")
+                time.sleep(2)
+                msg = "We can try a different code, if you'd like."
+                if get_yn(msg):
+                    time.sleep(1)
+                    print("Ok, hang on.")
+                    time.sleep(0.5)
+                    return self.cid_search()
+                else:
+                    time.sleep(1)
+                    print("Ok, I'll just send you back to the menu. Sorry.")
+                    time.sleep(1)
+                    return
+            else:
+                self.update(data)
+                self.display_weather()
+                self.search = False
+        else:
+            return
+
+    def zip_search(self):
+        # zip search handler
+        print(
+            "Quick disclaimer: Open Weather does not like to search by zip codes, for some reason.  I don't quite understand what their problem is, but there's only a few zip codes they like."
+        )
+        enter()
+        msg = "Are you looking up a city in the US?"
+        if get_yn(msg):
+            czip = input(werder("ciz"))
+            while not czip:
+                czip = input(werder("ciz"))
+            country = "us"
+
+            try:
+                int(czip)
+            except ValueError:
+                print(
+                    "Sorry, you didn't type only numbers for that.  Please try again!"
+                )
+                return self.zip_search()
+
+            query = f"{czip}, {country.upper()}"
+            verify = get_yn(f"You said {query}, is that right?")
+
+            if verify:
+                self.search = True
+                self.s_type = "zip"
+                self.query = query
+                data = self.scrape()
+                if not data:
+                    print(
+                        "Yea, sorry. Open Weather doesn't really like looking up by zip. If you have the city-id code or name, you could try that."
+                    )
+                    time.sleep(2)
+                    msg = "We can try a different zip, if you'd like. Well?"
+                    if get_yn(msg):
+                        time.sleep(1)
+                        print("Ok, hang on.")
+                        time.sleep(0.5)
+                        return self.zip_search()
+                    else:
+                        time.sleep(1)
+                        print("Ok, I'll just send you back to the menu. Sorry.")
+                        time.sleep(1)
+                        return
+
+                else:
+                    self.update(data)
+                    self.display_weather()
+                    self.search = False
+            else:
+                return
+
+    def geo_search(self):
+        # geocoord search handler thing
+        lat = input("The Latitude?")
+        while not lat:
+            lat = input("The Latitude?")
+        lon = input("The Longitude?")
+        while not lon:
+            lon = input("The Longitude?")
+
+        try:
+            float(lat)
+            float(lon)
+        except ValueError:
+            print("Sorry, you didn't type only numbers for that.  Please try again!")
+            return self.geo_search()
+        query = f"{lat}, {lon}"
+        verify = get_yn(f"You said {query}, is that right?")
+        if verify:
+            self.search = True
+            self.s_type = "geo"
+            self.query = [lat, lon]
+            data = self.scrape()
+            if not data:
+                print("Huh, normally that works...")
+                time.sleep(2)
+                msg = "We can try a different coordinate, if you'd like."
+                if get_yn(msg):
+                    time.sleep(1)
+                    print("Ok, hang on.")
+                    time.sleep(0.5)
+                    return self.geo_search()
+                else:
+                    time.sleep(1)
+                    print("Ok, I'll just send you back to the menu. Sorry.")
+                    time.sleep(1)
+                    return
+            else:
+                self.update(data)
+                self.display_weather()
+                self.search = False
         else:
             return
 
@@ -399,27 +556,48 @@ class Locale(object):
         url = "https://api.openweathermap.org/data/2.5/weather"
         if self.search:
             if self.s_type == "name":
-                param = self.query
-                param_type = "q"
+                parameters = {
+                    "q": self.query,
+                    "appid": API,
+                    "units": "imperial",
+                    "lang": "en",
+                }
             elif self.s_type == "city_id":
-                param = self.query
-                param_type = "id"
+                parameters = {
+                    "id": self.query,
+                    "appid": API,
+                    "units": "imperial",
+                    "lang": "en",
+                }
             elif self.s_type == "zip":
-                param = self.query
-                param_type = "zip"
+                parameters = {
+                    "zip": self.query,
+                    "appid": API,
+                    "units": "imperial",
+                    "lang": "en",
+                }
+            elif self.s_type == "geo":
+                parameters = {
+                    "lat": self.query[0],
+                    "lon": self.query[1],
+                    "appid": API,
+                    "units": "imperial",
+                    "lang": "en",
+                }
             else:
-                pass
+                parameters = {
+                    "id": self.city_id,
+                    "appid": API,
+                    "units": "imperial",
+                    "lang": "en",
+                }
         else:
-            param = self.city_id
-            param_type = "id"
-
-        parameters = {
-            param_type: param,
-            "appid": API,
-            "units": "imperial",
-            "lang": "en",
-        }
-
+            parameters = {
+                "id": self.city_id,
+                "appid": API,
+                "units": "imperial",
+                "lang": "en",
+            }
         if att < 3:
             try:
                 r = requests.get(url, parameters)
@@ -434,9 +612,11 @@ class Locale(object):
                 return data
             except requests.exceptions.HTTPError:
                 attempt += 1
-                msg = f"Search was unsuccessful on account of code {r.status_code}. Try again?"
+                msg = f"Search was unsuccessful on account of code {r.status_code}. Try connection again?"
                 if get_yn(msg):
                     return self.scrape(attempt)
+                else:
+                    return False
             except:
                 print(
                     "We may have broken something...or someone may actually be a teapot...hang on..."
@@ -457,10 +637,12 @@ def enter():
     return input("Press [enter] to continue...")
 
 
-def get_time():
+def get_time(timezone):
     dt = datetime.now()
-    dte = dt.strftime("%A, %B %d")
-    tme = dt.strftime("%I:%M %p")
+    unix = int(time.mktime(dt.timetuple()))
+    utc = unix + timezone
+    dte = datetime.utcfromtimestamp(utc).strftime("%A, %B %d")
+    tme = datetime.utcfromtimestamp(utc).strftime("%I:%M %p")
 
     return dte, tme
 
@@ -499,10 +681,12 @@ def werder(werds):
     msg6 = "country's "
     msg7 = "two letter abbreviation"
     msg8 = "?\n> "
+    msg9 = "ID#"
     cin = msg1 + msg2 + msg3 + msg8
     ciz = msg1 + msg2 + msg4 + msg8
     sin = msg1 + msg5 + msg7 + msg8
     coin = msg1 + msg6 + msg7 + msg8
+    cid = msg1 + msg2 + msg9 + msg8
 
     if werds == "cin":
         return cin
@@ -512,6 +696,8 @@ def werder(werds):
         return sin
     elif werds == "coin":
         return coin
+    elif werds == "cid":
+        return cid
 
 
 def get_yn(prompt):
@@ -548,7 +734,9 @@ menu_dict = {
         },
         "Find New Locale": {
             "Search By Name": local.name_search,
-            "Search By Zip Code": not_implemented,
+            "Search By City ID#": local.cid_search,
+            "Search By Zip Code": local.zip_search,
+            "Search By Geographic Coordinates": local.geo_search,
             "Main Menu": "upone",
             "Exit Program": "exit",
         },
