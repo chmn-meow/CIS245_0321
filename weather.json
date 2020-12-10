@@ -1,43 +1,43 @@
 {
     "coord": {
-        "lon": -95.94,
-        "lat": 41.26
+        "lon": -104.98,
+        "lat": 39.74
     },
     "weather": [
         {
-            "id": 711,
-            "main": "Smoke",
-            "description": "smoke",
-            "icon": "50n"
+            "id": 801,
+            "main": "Clouds",
+            "description": "few clouds",
+            "icon": "02n"
         }
     ],
     "base": "stations",
     "main": {
-        "temp": 51.55,
-        "feels_like": 43.12,
-        "temp_min": 50,
-        "temp_max": 53.01,
-        "pressure": 1015,
-        "humidity": 43
+        "temp": 43.63,
+        "feels_like": 35.4,
+        "temp_min": 41,
+        "temp_max": 46,
+        "pressure": 1025,
+        "humidity": 21
     },
     "visibility": 10000,
     "wind": {
-        "speed": 8.05,
-        "deg": 20
+        "speed": 3.96,
+        "deg": 217
     },
     "clouds": {
-        "all": 20
+        "all": 11
     },
-    "dt": 1607556781,
+    "dt": 1607570114,
     "sys": {
-        "type": 1,
-        "id": 5204,
+        "type": 3,
+        "id": 2034152,
         "country": "US",
-        "sunrise": 1607521099,
-        "sunset": 1607554483
+        "sunrise": 1607522994,
+        "sunset": 1607556929
     },
-    "timezone": -21600,
-    "id": 5074472,
-    "name": "Omaha",
+    "timezone": -25200,
+    "id": 5419384,
+    "name": "Denver",
     "cod": 200
 }
