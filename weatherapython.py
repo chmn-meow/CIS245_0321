@@ -44,12 +44,14 @@ class Menu(object):
         self.options = self.master_menu[self.current].keys()
 
     def navigate(self):
+        # this is bread and butter of the menu system.  It all stems from here.
         self.navigating = True
         self.build_menu()
         selection = input("Your selection?\n> ")
         return self.select(selection)
 
     def select(self, selection):
+        # handler for menu selection
         try:
             sel = int(selection)
             itr = 0
@@ -112,6 +114,7 @@ class Menu(object):
             return self.navigate()
 
     def build_menu(self):
+        # menu building handler
         print(f"{self.current} Menu:")
         if not self.treed:
             mn = 1
@@ -155,6 +158,7 @@ class Menu(object):
                                 return
 
     def exit_program(self):
+        # exit program handler
         msg = "Are you sure you'd like to exit the program?"
         if get_yn(msg):
             self.navigating = False
@@ -368,7 +372,8 @@ class Locale(object):
         enter()
 
     def name_search(self):
-        # named search handler
+        # named search handler.  This works just about as well as geocoord searching.  This is probably a little more accurate, but
+        # both are quite valid search methods.
         msg = "Are you looking up a city in the US?"
         if get_yn(msg):
 
@@ -416,7 +421,8 @@ class Locale(object):
                 return
 
     def cid_search(self):
-        # city id # search handler thing
+        # city id # search handler thing.  This is the single most reliable search method, provided you know open weather's
+        # city codes.  I should include that with a quick "inspect locale" feature/function...
         cid = ""
         while not cid:
             cid = input(werder("cid"))
@@ -456,6 +462,11 @@ class Locale(object):
 
     def zip_search(self):
         # zip search handler
+        # regardless of how I do it, even just using raw browser connection, I could not get a single city to pop using zip codes
+        # I don't know if they just created an error during their last update, cause I do remember having done it when I first looked
+        # at the API documentation...I don't remember what zip I used at that time, though.  Nothing, including ones I've found on
+        # forums talking about this issue that users said worked for them, haven't worked for me.  Strange...will monitor
+
         print(
             "Quick disclaimer: Open Weather does not like to search by zip codes, for some reason.  I don't quite understand what their problem is, but there's only a few zip codes they like."
         )
@@ -508,7 +519,7 @@ class Locale(object):
                 return
 
     def geo_search(self):
-        # geocoord search handler thing
+        # geocoord search handler thing, works better than zip codes, for some reason
         lat = ""
         while not lat:
             lat = input("The Latitude?\n> ")
@@ -605,12 +616,13 @@ class Locale(object):
                 while r.status_code == requests.codes.ok:  # pylint: disable=no-member
                     data = json.loads(r.text)
                     # for testing purposes, we will save these results to a file for now.
-                    # un-comment for useage
+                    # un-comment before turning in...otherwise, it may spit an error at the prof
                     with open("weather.json", "w") as f:
                         json.dump(data, f, indent=4)
                     break
                 return data
             except requests.exceptions.HTTPError:
+                # we're just going to use requests' prebuild exceptions to handle
                 attempt += 1
                 msg = f"Search was unsuccessful on account of code {r.status_code}. Try connection again?"
                 if get_yn(msg):
@@ -618,6 +630,7 @@ class Locale(object):
                 else:
                     return False
             except:
+                # a non-HTTP error has occured, but can't think of what'd kick it.  Prolly certain types of data?
                 print(
                     "We may have broken something...or someone may actually be a teapot...hang on..."
                 )
@@ -627,6 +640,7 @@ class Locale(object):
                 attempt += 1
                 return self.scrape(attempt)
         else:
+            # if we get here, chances are there was a bad request, but whatev
             print(
                 f"I'm not sure what's going wrong, here, but we have had a SERIOUS series of errors."
             )
@@ -638,6 +652,7 @@ def enter():
 
 
 def get_time(timezone):
+    # quick little function to apply same type of unix handling to our times as the ones passed
     dt = datetime.now()
     unix = int(time.mktime(dt.timetuple()))
     utc = unix + timezone
@@ -648,7 +663,7 @@ def get_time(timezone):
 
 
 def flatten(current, key="", result={}):
-    # quick function to "flatten" the json to a singular k/v dictionary
+    # quick function to "flatten" the json to a singular k/v dictionary JSON style
     iter = 0
     if isinstance(current, dict):
         for k, v in current.items():
@@ -666,6 +681,7 @@ def flatten(current, key="", result={}):
 
 
 def not_implemented():
+    # place-holder for future expansion and reminder of gaps - All req's will be completed, none can have this holder
     print(
         "Sorry, that feature hasn't been built-out yet. Check back, and it may be.\nCheers!"
     )
@@ -673,6 +689,7 @@ def not_implemented():
 
 
 def werder(werds):
+    # got tired of typing questions, so I tried to speed things up a bit using reel werds
     msg1 = "What is the "
     msg2 = "city's "
     msg3 = "name"
@@ -720,7 +737,10 @@ def get_yn(prompt):
         return get_yn(err)
 
 
+# initialize and grab first pull of data from open weather
 local = Locale()
+
+# prebuilt dictionary of menu tree and commands
 menu_dict = {
     "Main": {
         "Quick Weather": local.quick_weather,
@@ -744,6 +764,7 @@ menu_dict = {
     }
 }
 
+# start up Menu class and pass prebuilt menu dictionary
 menu = Menu("Main", menu_dict)
 
 # technically the beginning of the program
