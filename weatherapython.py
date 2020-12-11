@@ -474,7 +474,7 @@ class Locale(object):
         msg = "Are you looking up a city in the US?"
         if get_yn(msg):
             czip = ""
-            while not czip:
+            while not czip or len(czip) < 4:
                 czip = input(werder("ciz"))
             country = "us"
 
@@ -616,9 +616,9 @@ class Locale(object):
                 while r.status_code == requests.codes.ok:  # pylint: disable=no-member
                     data = json.loads(r.text)
                     # for testing purposes, we will save these results to a file for now.
-                    # un-comment before turning in...otherwise, it may spit an error at the prof
-                    with open("weather.json", "w") as f:
-                        json.dump(data, f, indent=4)
+                    # comment before turning in...otherwise, it may spit an error at the prof
+                    # with open("weather.json", "w") as f:
+                    #    json.dump(data, f, indent=4)
                     break
                 return data
             except requests.exceptions.HTTPError:
@@ -630,7 +630,8 @@ class Locale(object):
                 else:
                     return False
             except:
-                # a non-HTTP error has occured, but can't think of what'd kick it.  Prolly certain types of data?
+                # a non-HTTP error has occured, but can't think of what'd kick an error
+                # Prolly certain types of returned data?
                 print(
                     "We may have broken something...or someone may actually be a teapot...hang on..."
                 )
@@ -652,7 +653,8 @@ def enter():
 
 
 def get_time(timezone):
-    # quick little function to apply same type of unix handling to our times as the ones passed
+    # quick little function to apply same type of unix handling to our times as the ones
+    # passed, just to help ensure our times are all jiving
     dt = datetime.now()
     unix = int(time.mktime(dt.timetuple()))
     utc = unix + timezone
@@ -681,7 +683,8 @@ def flatten(current, key="", result={}):
 
 
 def not_implemented():
-    # place-holder for future expansion and reminder of gaps - All req's will be completed, none can have this holder
+    # place-holder for future expansion and reminder of gaps - All req's will be completed, none of the
+    # base req's can have this holder
     print(
         "Sorry, that feature hasn't been built-out yet. Check back, and it may be.\nCheers!"
     )
@@ -689,7 +692,7 @@ def not_implemented():
 
 
 def werder(werds):
-    # got tired of typing questions, so I tried to speed things up a bit using reel werds
+    # got tired of typing questions, so I tried to speed things up a bit using "reel werds"
     msg1 = "What is the "
     msg2 = "city's "
     msg3 = "name"
