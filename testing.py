@@ -1,21 +1,17 @@
-import datetime
+import os
+import requests
+import json
+import time
+from datetime import datetime
+from dotenv import load_dotenv, find_dotenv
 
-today = datetime.datetime.now()
-# timezone = datetime.timedelta(hours=-6)
-# corrected_time = utc_dt_aware + timezone
-updt = today.strftime("%A, %B, %d")
-day = today.day
-month = today.month
-tm = today.time()
-tme = tm.strftime("%I:%m %p")
+load_dotenv(find_dotenv())
+API = str(os.environ.get("API"))
 
-timestamp = 1607470253
-last_called = datetime.datetime.fromtimestamp(timestamp)
+dt = datetime.now()
+today = dt.strftime("%A, %B %d")
+day = dt.strftime("%A")
+tyme = dt.strftime("%I:%M %p")
 
-
-print(today)
-print(updt)
-print(day)
-print(month)
-print(tm)
-print(tme)
+timestamp = 1607556781
+last_called = datetime.fromtimestamp(timestamp).strftime("%I:%M %p on %A, %B %d")

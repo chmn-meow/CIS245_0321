@@ -20,7 +20,7 @@ import os
 import requests
 import json
 import time
-import datetime
+from datetime import datetime
 
 from dotenv import load_dotenv, find_dotenv
 
@@ -169,153 +169,467 @@ class Locale(object):
     # creating a locale object to store information
     city_name = str(os.environ.get("CITYNAME"))
     city_id = int(os.environ.get("CITYID"))
+    gust = None
+    zip_code = None
+    search = False
+    s_type = None
+    query = None
 
     def __init__(self):
         data = self.scrape()
         self.update(data)
 
     def update(self, js):
-        timezone = 0
-        timestamp = 0
-        for key, value in js.items():
-            if isinstance(value, dict):
-                if key == "coord":
-                    for k, v in value.items():
-                        if k == "lon":
-                            self.long = v
-                        elif k == "lat":
-                            self.lat = v
+        # takes the unparsed scrape and fits it to our object
+        if not js:
+            print(f"And more errors.  Connect to the internet, maybe?")
+        else:
+            for key, value in js.items():
+                if isinstance(value, dict):
+                    if key == "coord":
+                        for k, v in value.items():
+                            if k == "lon":
+                                self.long = v
+                            elif k == "lat":
+                                self.lat = v
+                            else:
+                                pass
+                        if self.long > 0:
+                            lon = "E"
                         else:
-                            pass
-                    if self.long > 0:
-                        lon = "E"
+                            lon = "W"
+                        if self.lat > 0:
+                            lat = "N"
+                        else:
+                            lat = "S"
+                        self.coord = f"{self.lat} {lat}, {self.long} {lon}"
+                    elif key == "main":
+                        for k, v in value.items():
+                            if k == "temp":
+                                self.temp = v
+                            elif k == "feels_like":
+                                self.feels = v
+                            elif k == "temp_min":
+                                self.min = v
+                            elif k == "temp_max":
+                                self.max = v
+                            elif k == "pressure":
+                                self.pressure = v
+                            elif k == "humidity":
+                                self.humidity = v
+                            else:
+                                pass
+                    elif key == "wind":
+                        for k, v in value.items():
+                            if k == "speed":
+                                self.wind_speed = v
+                            elif k == "gust":
+                                self.gust = v
+                            elif k == "deg":
+                                if v > 348.75 or v <= 11.25:
+                                    self.wind_dir = "Northerly"
+                                elif v > 11.25 and v <= 33.75:
+                                    self.wind_dir = "North-North-Easterly"
+                                elif v > 33.75 and v <= 56.25:
+                                    self.wind_dir = "North-Easterly"
+                                elif v > 56.25 and v <= 78.75:
+                                    self.wind_dir = "East-North-Easterly"
+                                elif v > 78.75 and v <= 101.25:
+                                    self.wind_dir = "Easterly"
+                                elif v > 101.25 and v <= 123.75:
+                                    self.wind_dir = "East-South-Easterly"
+                                elif v > 123.75 and v <= 146.25:
+                                    self.wind_dir = "South-Easterly"
+                                elif v > 146.25 and v <= 168.75:
+                                    self.wind_dir = "South-South-Easterly"
+                                elif v > 168.75 and v <= 191.25:
+                                    self.wind_dir = "Southerly"
+                                elif v > 191.25 and v <= 213.75:
+                                    self.wind_dir = "South-South-Westerly"
+                                elif v > 213.75 and v <= 236.25:
+                                    self.wind_dir = "South-Westerly"
+                                elif v > 236.25 and v <= 258.75:
+                                    self.wind_dir = "West-South-Westerly"
+                                elif v > 258.75 and v <= 281.25:
+                                    self.wind_dir = "Westerly"
+                                elif v > 281.25 and v <= 303.75:
+                                    self.wind_dir = "West-North-Westerly"
+                                elif v > 303.75 and v <= 326.25:
+                                    self.wind_dir = "North-Westerly"
+                                elif v > 326.25 and v <= 348.75:
+                                    self.wind_dir = "North-West-Northerly"
+                                else:
+                                    self.wind_dir = "That-way-ish-ly"
+                            else:
+                                pass
+                    elif key == "clouds":
+                        self.cloudiness = value["all"]
+                    elif key == "rain":
+                        self.rain = value
+                    elif key == "snow":
+                        self.snow = value
+                    elif key == "sys":
+                        self.concode = value["country"]
+                        utc_sunrise = value["sunrise"]
+                        utc_sunset = value["sunset"]
                     else:
-                        lon = "W"
-                    if self.lat > 0:
-                        lat = "N"
+                        pass
+                elif isinstance(value, list):
+                    if key == "weather":
+                        iter = 1
+                        self.weather = {}
+                        for dic in value:
+                            self.weather[iter] = {}
+                            for k, v in dic.items():
+                                self.weather[iter][k] = v
+                            iter += 1
                     else:
-                        lat = "S"
-                    self.coord = f"{self.lat} {lat}, {self.long} {lon}"
-                elif key == "main":
-                    for k, v in value.items():
-                        if k == "temp":
-                            self.temp = v
-                        elif k == "feels_like":
-                            self.feels = v
-                        elif k == "temp_min":
-                            self.min = v
-                        elif k == "temp_max":
-                            self.max = v
-                        elif k == "pressure":
-                            self.pressure = v
-                        elif k == "humidity":
-                            self.humidity = v
-                        else:
-                            pass
-                elif key == "wind":
-                    for k, v in value.items():
-                        if k == "speed":
-                            self.wind_speed = v
-                        elif k == "gust":
-                            self.gust = v
-                        elif k == "deg":
-                            self.deg = v
-                        else:
-                            pass
-                elif key == "clouds":
-                    self.cloudiness = value["all"]
-                elif key == "rain":
-                    self.rain = value
-                elif key == "snow":
-                    self.snow = value
-                elif key == "sys":
-                    self.concode = value["country"]
-                    s_timestamp = value["sunrise"]
-                    ss_timestamp = value["sunset"]
+                        pass
+                elif isinstance(value, str):
+                    if key == "base":
+                        pass
+                    elif key == "name":
+                        self.city_name = value
+                    else:
+                        pass
+                elif isinstance(value, int):
+                    if key == "visibility":
+                        self.visibility = value // 1000
+                    elif key == "dt":
+                        utc_call = value
+                    elif key == "timezone":
+                        timezone = value
+                    elif key == "id":
+                        self.city_id = value
+                    else:
+                        pass
                 else:
                     pass
-            elif isinstance(value, list):
-                if key == "weather":
-                    iter = 1
-                    self.weather = {}
-                    for dic in value:
-                        self.weather[iter] = {}
-                        for k, v in dic.items():
-                            self.weather[iter][k] = v
-                        iter += 1
-                else:
-                    pass
-            elif isinstance(value, str):
-                if key == "base":
-                    pass
-                elif key == "visibility":
-                    self.visibility = value
-                elif key == "dt":
-                    timestamp = value
-                elif key == "timezone":
-                    timezone = value
-                elif key == "id":
-                    self.city_id = value
-                elif key == "name":
-                    self.city_name = value
-                else:
-                    pass
-            elif isinstance(value, int):
-                pass
-            else:
-                pass
-        ts = timestamp - timezone
-        s = s_timestamp - timezone
-        ss = ss_timestamp - timezone
-        self.last_called = datetime.datetime.utcfromtimestamp(ts).strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
-        self.sunrise = datetime.datetime.utcfromtimestamp(s).strftime("%H:%M %p")
-        self.sunset = datetime.datetime.utcfromtimestamp(ss).strftime("%H:%M %p")
-        self.date, self.time = get_time()
+            ts = utc_call + timezone
+            s = utc_sunrise + timezone
+            ss = utc_sunset + timezone
+            self.last_called = datetime.utcfromtimestamp(ts).strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
+            self.sunrise = datetime.utcfromtimestamp(s).strftime("%I:%M %p")
+            self.sunset = datetime.utcfromtimestamp(ss).strftime("%I:%M %p")
+            self.date, self.time = get_time(timezone)
 
     def display_location(self):
+        # this will display currently active location's data
         print(f"Currently, our saved city is {self.city_name}.")
-        time.sleep(1)
+        time.sleep(0.3)
         print(f"The city of {self.city_name} is coded as Id#: {self.city_id}.")
-        time.sleep(1)
+        time.sleep(0.3)
         print(f"The lat-long is {self.coord}, which is in the {self.concode}.")
-        time.sleep(1)
+        time.sleep(0.3)
         enter()
 
     def quick_weather(self):
-        time.sleep(0.5)
+        # this will be the quick weather details printer
+        time.sleep(0.3)
         print(
             f"It is currently {self.weather[1]['description']} in the {self.city_name} area. It is {self.temp} degrees, feeling like an average {self.feels} degrees."
         )
-        time.sleep(0.5)
+        time.sleep(0.3)
         enter()
 
     def display_weather(self):
-        time.sleep(0.5)
-        print(f"It is {self.time} on {self.date}.")
+        # this will be the detailed weather printer
+        time.sleep(0.3)
+        print(f"It is {self.time} in {self.city_name} on {self.date}.\n")
+        time.sleep(0.3)
+        print(
+            f"We have {self.weather[1]['description']} with a temperature of {self.temp} degrees, though it feels like {self.feels} degrees.\n"
+        )
+        time.sleep(0.3)
+        print(f"The high for today is {self.max} with a low of {self.min} degrees.\n")
+        time.sleep(0.3)
+        print(
+            f"Humidity is at {self.humidity}% with an atmospheric pressure of {self.pressure} hPa.\n"
+        )
+        time.sleep(0.3)
+        if self.gust:
+            gusts = f"Gusts are up to {self.gust} mpg."
+        else:
+            gusts = "There are no gusts at this hour."
+        print(
+            f"We have a {self.wind_dir} wind blowing at {self.wind_speed} mph. {gusts}\n"
+        )
+        time.sleep(0.3)
+        print(
+            f"Cloud cover is at {self.cloudiness}%, and visibility is pegged at approximately {self.visibility} km.\n"
+        )
+        time.sleep(0.3)
+        print(
+            f"Expected sunrise and sunset times today are {self.sunrise} and {self.sunset}, respectively.\n"
+        )
+        time.sleep(0.3)
         enter()
 
-    def scrape(self):
-        # this will be the primary API actor
-        parameters = {
-            "id": self.city_id,
-            "appid": API,
-            "units": "imperial",
-            "lang": "en",
-        }
-        url = "https://api.openweathermap.org/data/2.5/weather"
+    def name_search(self):
+        # named search handler
+        msg = "Are you looking up a city in the US?"
+        if get_yn(msg):
+
+            city = ""
+            while not city:
+                city = input(werder("cin"))
+            state = ""
+            while len(state) > 2 or not state:
+                state = input(werder("sin"))
+            country = "us"
+
+            query = f"{city.title()}, {state.upper()}, {country.upper()}"
+            verify = get_yn(f"You said {query}, is that right?")
+
+            if verify:
+                self.search = True
+                self.s_type = "name"
+                self.query = query
+                data = self.scrape()
+                self.update(data)
+                self.display_weather()
+                self.search = False
+            else:
+                return
+        else:
+            city = ""
+            while not city:
+                city = input(werder("cin"))
+            country = ""
+            while len(country) > 2 or not country:
+                country = input(werder("coin"))
+
+            query = f"{city.title()}, {country.upper()}"
+            verify = get_yn(f"You said {query}, is that right?")
+
+            if verify:
+                self.search = True
+                self.s_type = "name"
+                self.query = query
+                data = self.scrape()
+                self.update(data)
+                self.display_weather()
+                self.search = False
+            else:
+                return
+
+    def cid_search(self):
+        # city id # search handler thing
+        cid = ""
+        while not cid:
+            cid = input(werder("cid"))
 
         try:
-            r = requests.get(url, parameters)
-            while r.status_code == requests.codes.ok:  # pylint: disable=no-member
-                data = json.loads(r.text)
-                with open("weather.json", "w") as f:
-                    json.dump(data, f, indent=4)
-                break
-        except:
-            print("We may have broken something...Hang on.")
-        return data
+            int(cid)
+        except ValueError:
+            print("Sorry, you didn't type only numbers for that.  Please try again!")
+            return self.zip_search()
+        query = f"{cid}"
+        verify = get_yn(f"You said {query}, is that right?")
+        if verify:
+            self.search = True
+            self.s_type = "id"
+            self.query = query
+            data = self.scrape()
+            if not data:
+                print("Huh, normally that works...")
+                time.sleep(2)
+                msg = "We can try a different code, if you'd like."
+                if get_yn(msg):
+                    time.sleep(1)
+                    print("Ok, hang on.")
+                    time.sleep(0.5)
+                    return self.cid_search()
+                else:
+                    time.sleep(1)
+                    print("Ok, I'll just send you back to the menu. Sorry.")
+                    time.sleep(1)
+                    return
+            else:
+                self.update(data)
+                self.display_weather()
+                self.search = False
+        else:
+            return
+
+    def zip_search(self):
+        # zip search handler
+        print(
+            "Quick disclaimer: Open Weather does not like to search by zip codes, for some reason.  I don't quite understand what their problem is, but there's only a few zip codes they like."
+        )
+        enter()
+        msg = "Are you looking up a city in the US?"
+        if get_yn(msg):
+            czip = ""
+            while not czip:
+                czip = input(werder("ciz"))
+            country = "us"
+
+            try:
+                int(czip)
+            except ValueError:
+                print(
+                    "Sorry, you didn't type only numbers for that.  Please try again!"
+                )
+                return self.zip_search()
+
+            query = f"{czip}, {country.upper()}"
+            verify = get_yn(f"You said {query}, is that right?")
+
+            if verify:
+                self.search = True
+                self.s_type = "zip"
+                self.query = query
+                data = self.scrape()
+                if not data:
+                    print(
+                        "Yea, sorry. Open Weather doesn't really like looking up by zip. If you have the city-id code or name, you could try that."
+                    )
+                    time.sleep(2)
+                    msg = "We can try a different zip, if you'd like. Well?"
+                    if get_yn(msg):
+                        time.sleep(1)
+                        print("Ok, hang on.")
+                        time.sleep(0.5)
+                        return self.zip_search()
+                    else:
+                        time.sleep(1)
+                        print("Ok, I'll just send you back to the menu. Sorry.")
+                        time.sleep(1)
+                        return
+
+                else:
+                    self.update(data)
+                    self.display_weather()
+                    self.search = False
+            else:
+                return
+
+    def geo_search(self):
+        # geocoord search handler thing
+        lat = input("The Latitude?")
+        while not lat:
+            lat = input("The Latitude?")
+        lon = input("The Longitude?")
+        while not lon:
+            lon = input("The Longitude?")
+
+        try:
+            float(lat)
+            float(lon)
+        except ValueError:
+            print("Sorry, you didn't type only numbers for that.  Please try again!")
+            return self.geo_search()
+        query = f"{lat}, {lon}"
+        verify = get_yn(f"You said {query}, is that right?")
+        if verify:
+            self.search = True
+            self.s_type = "geo"
+            self.query = [lat, lon]
+            data = self.scrape()
+            if not data:
+                print("Huh, normally that works...")
+                time.sleep(2)
+                msg = "We can try a different coordinate, if you'd like."
+                if get_yn(msg):
+                    time.sleep(1)
+                    print("Ok, hang on.")
+                    time.sleep(0.5)
+                    return self.geo_search()
+                else:
+                    time.sleep(1)
+                    print("Ok, I'll just send you back to the menu. Sorry.")
+                    time.sleep(1)
+                    return
+            else:
+                self.update(data)
+                self.display_weather()
+                self.search = False
+        else:
+            return
+
+    def scrape(self, att=1):
+        # this will be the primary API actor
+        attempt = att
+        url = "https://api.openweathermap.org/data/2.5/weather"
+        if self.search:
+            if self.s_type == "name":
+                parameters = {
+                    "q": self.query,
+                    "appid": API,
+                    "units": "imperial",
+                    "lang": "en",
+                }
+            elif self.s_type == "city_id":
+                parameters = {
+                    "id": self.query,
+                    "appid": API,
+                    "units": "imperial",
+                    "lang": "en",
+                }
+            elif self.s_type == "zip":
+                parameters = {
+                    "zip": self.query,
+                    "appid": API,
+                    "units": "imperial",
+                    "lang": "en",
+                }
+            elif self.s_type == "geo":
+                parameters = {
+                    "lat": self.query[0],
+                    "lon": self.query[1],
+                    "appid": API,
+                    "units": "imperial",
+                    "lang": "en",
+                }
+            else:
+                parameters = {
+                    "id": self.city_id,
+                    "appid": API,
+                    "units": "imperial",
+                    "lang": "en",
+                }
+        else:
+            parameters = {
+                "id": self.city_id,
+                "appid": API,
+                "units": "imperial",
+                "lang": "en",
+            }
+        if att < 3:
+            try:
+                r = requests.get(url, parameters)
+                r.raise_for_status()
+                while r.status_code == requests.codes.ok:  # pylint: disable=no-member
+                    data = json.loads(r.text)
+                    # for testing purposes, we will save these results to a file for now.
+                    # un-comment for useage
+                    with open("weather.json", "w") as f:
+                        json.dump(data, f, indent=4)
+                    break
+                return data
+            except requests.exceptions.HTTPError:
+                attempt += 1
+                msg = f"Search was unsuccessful on account of code {r.status_code}. Try connection again?"
+                if get_yn(msg):
+                    return self.scrape(attempt)
+                else:
+                    return False
+            except:
+                print(
+                    "We may have broken something...or someone may actually be a teapot...hang on..."
+                )
+                time.sleep(2)
+                print("Trying again.")
+                time.sleep(1)
+                attempt += 1
+                return self.scrape(attempt)
+        else:
+            print(
+                f"I'm not sure what's going wrong, here, but we have had a SERIOUS series of errors."
+            )
 
 
 def enter():
@@ -323,13 +637,12 @@ def enter():
     return input("Press [enter] to continue...")
 
 
-def get_time():
-    utc_dt_aware = datetime.datetime.now(datetime.timezone.utc)
-    timezone = datetime.timedelta(hours=-6)
-    ct = utc_dt_aware + timezone
-    dte = ct.strftime("%A, %B %d")
-    tm = ct.time()
-    tme = tm.strftime("%I:%m %p")
+def get_time(timezone):
+    dt = datetime.now()
+    unix = int(time.mktime(dt.timetuple()))
+    utc = unix + timezone
+    dte = datetime.utcfromtimestamp(utc).strftime("%A, %B %d")
+    tme = datetime.utcfromtimestamp(utc).strftime("%I:%M %p")
 
     return dte, tme
 
@@ -352,12 +665,47 @@ def flatten(current, key="", result={}):
     return result
 
 
+def not_implemented():
+    print(
+        "Sorry, that feature hasn't been built-out yet. Check back, and it may be.\nCheers!"
+    )
+    enter()
+
+
+def werder(werds):
+    msg1 = "What is the "
+    msg2 = "city's "
+    msg3 = "name"
+    msg4 = "zip code"
+    msg5 = "state's "
+    msg6 = "country's "
+    msg7 = "two letter abbreviation"
+    msg8 = "?\n> "
+    msg9 = "ID# "
+
+    if werds == "cin":
+        cin = "".join([msg1, msg2, msg3, msg8])
+        return cin
+    elif werds == "ciz":
+        ciz = "".join([msg1, msg2, msg4, msg8])
+        return ciz
+    elif werds == "sin":
+        sin = "".join([msg1, msg5, msg7, msg8])
+        return sin
+    elif werds == "coin":
+        coin = "".join([msg1, msg6, msg7, msg8])
+        return coin
+    elif werds == "cid":
+        cid = "".join([msg1, msg2, msg9, msg8])
+        return cid
+
+
 def get_yn(prompt):
     # a simple function designed to handle a quick yes/no question
     err = "I couldn't catch that. Let's do this again."
     msg = input(f"{prompt} [y/n]\n> ")
     if not msg:
-        return get_yn(err)
+        return get_yn("You didn't type anything!")
     elif "y" in msg:
         if msg == "y" or msg == "yes" or msg == "ya":
             return True
@@ -379,14 +727,16 @@ menu_dict = {
         "View Current Locale": {
             "View Locale Information": local.display_location,
             "View Today's Detailed Forecast": local.display_weather,
-            "View 5-day Forecast": NotImplemented,
-            "View Weather History": NotImplemented,
+            "View 5-day Forecast": not_implemented,
+            "View Weather History": not_implemented,
             "Main Menu": "upone",
             "Exit Program": "exit",
         },
         "Find New Locale": {
-            "Search By Name": NotImplemented,
-            "Search By Zip Code": NotImplemented,
+            "Search By Name": local.name_search,
+            "Search By City ID#": local.cid_search,
+            "Search By Zip Code": local.zip_search,
+            "Search By Geographic Coordinates": local.geo_search,
             "Main Menu": "upone",
             "Exit Program": "exit",
         },
@@ -397,7 +747,7 @@ menu_dict = {
 menu = Menu("Main", menu_dict)
 
 # technically the beginning of the program
-print("Hello, and welcome to the Wx-APY-thon 2500!\n")
+print("\n\nHello, and welcome to the Wx-APY-thon 2500!\n")
 
 # prepare program loop
 menu.end_program = False
