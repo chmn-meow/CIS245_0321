@@ -1,46 +1,43 @@
 {
     "coord": {
-        "lon": -95.89,
-        "lat": 41.14
+        "lon": -77.04,
+        "lat": 38.9
     },
     "weather": [
         {
-            "id": 501,
-            "main": "Rain",
-            "description": "moderate rain",
-            "icon": "10d"
+            "id": 803,
+            "main": "Clouds",
+            "description": "broken clouds",
+            "icon": "04n"
         }
     ],
     "base": "stations",
     "main": {
-        "temp": 36.41,
-        "feels_like": 25.75,
-        "temp_min": 35.01,
-        "temp_max": 37.4,
-        "pressure": 1009,
-        "humidity": 86
+        "temp": 52.16,
+        "feels_like": 44.37,
+        "temp_min": 50,
+        "temp_max": 54,
+        "pressure": 1020,
+        "humidity": 58
     },
     "visibility": 10000,
     "wind": {
-        "speed": 12.75,
-        "deg": 20
-    },
-    "rain": {
-        "1h": 1.15
+        "speed": 9.17,
+        "deg": 190
     },
     "clouds": {
-        "all": 90
+        "all": 75
     },
-    "dt": 1607726467,
+    "dt": 1607727577,
     "sys": {
         "type": 1,
-        "id": 5175,
+        "id": 3787,
         "country": "US",
-        "sunrise": 1607693963,
-        "sunset": 1607727303
+        "sunrise": 1607689032,
+        "sunset": 1607723183
     },
-    "timezone": -21600,
-    "id": 5063805,
-    "name": "Bellevue",
+    "timezone": -18000,
+    "id": 4140963,
+    "name": "Washington D.C.",
     "cod": 200
 }

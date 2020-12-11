@@ -509,12 +509,12 @@ class Locale(object):
 
     def geo_search(self):
         # geocoord search handler thing
-        lat = input("The Latitude?")
+        lat = ""
         while not lat:
-            lat = input("The Latitude?")
-        lon = input("The Longitude?")
+            lat = input("The Latitude?\n> ")
+        lon = ""
         while not lon:
-            lon = input("The Longitude?")
+            lon = input("The Longitude?\n> ")
 
         try:
             float(lat)
