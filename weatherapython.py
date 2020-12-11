@@ -372,10 +372,10 @@ class Locale(object):
         msg = "Are you looking up a city in the US?"
         if get_yn(msg):
 
-            city = input(werder("cin"))
+            city = ""
             while not city:
                 city = input(werder("cin"))
-            state = input(werder("sin"))
+            state = ""
             while len(state) > 2 or not state:
                 state = input(werder("sin"))
             country = "us"
@@ -394,10 +394,10 @@ class Locale(object):
             else:
                 return
         else:
-            city = input(werder("cin"))
+            city = ""
             while not city:
                 city = input(werder("cin"))
-            country = input(werder("coin"))
+            country = ""
             while len(country) > 2 or not country:
                 country = input(werder("coin"))
 
@@ -417,7 +417,7 @@ class Locale(object):
 
     def cid_search(self):
         # city id # search handler thing
-        cid = input(werder("cid"))
+        cid = ""
         while not cid:
             cid = input(werder("cid"))
 
@@ -462,7 +462,7 @@ class Locale(object):
         enter()
         msg = "Are you looking up a city in the US?"
         if get_yn(msg):
-            czip = input(werder("ciz"))
+            czip = ""
             while not czip:
                 czip = input(werder("ciz"))
             country = "us"
@@ -681,22 +681,22 @@ def werder(werds):
     msg6 = "country's "
     msg7 = "two letter abbreviation"
     msg8 = "?\n> "
-    msg9 = "ID#"
-    cin = msg1 + msg2 + msg3 + msg8
-    ciz = msg1 + msg2 + msg4 + msg8
-    sin = msg1 + msg5 + msg7 + msg8
-    coin = msg1 + msg6 + msg7 + msg8
-    cid = msg1 + msg2 + msg9 + msg8
+    msg9 = "ID# "
 
     if werds == "cin":
+        cin = "".join([msg1, msg2, msg3, msg8])
         return cin
     elif werds == "ciz":
+        ciz = "".join([msg1, msg2, msg4, msg8])
         return ciz
     elif werds == "sin":
+        sin = "".join([msg1, msg5, msg7, msg8])
         return sin
     elif werds == "coin":
+        coin = "".join([msg1, msg6, msg7, msg8])
         return coin
     elif werds == "cid":
+        cid = "".join([msg1, msg2, msg9, msg8])
         return cid
 
 
