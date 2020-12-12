@@ -27,6 +27,8 @@ from dotenv import load_dotenv, find_dotenv
 # load and define global constants
 load_dotenv(find_dotenv())
 API = str(os.environ.get("API"))
+# note, this code will fail without an API key either hardcoded and uncommented below, or in a .env file
+# API = ""
 
 
 class Menu(object):
@@ -171,8 +173,10 @@ class Menu(object):
 
 class Locale(object):
     # creating a locale object to store information
-    city_name = str(os.environ.get("CITYNAME"))
-    city_id = int(os.environ.get("CITYID"))
+    city_name = ""
+    city_id = ""
+    # city_name = str(os.environ.get("CITYNAME"))
+    # city_id = int(os.environ.get("CITYID"))
     gust = None
     zip_code = None
     search = False
@@ -180,8 +184,11 @@ class Locale(object):
     query = None
 
     def __init__(self):
-        data = self.scrape()
-        self.update(data)
+        if not self.city_id and not self.city_name:
+            pass
+        else:
+            data = self.scrape()
+            self.update(data)
 
     def update(self, js):
         # takes the unparsed scrape and fits it to our object
@@ -320,56 +327,70 @@ class Locale(object):
             self.date, self.time = get_time(timezone)
 
     def display_location(self):
-        # this will display currently active location's data
-        print(f"Currently, our saved city is {self.city_name}.")
-        time.sleep(0.3)
-        print(f"The city of {self.city_name} is coded as Id#: {self.city_id}.")
-        time.sleep(0.3)
-        print(f"The lat-long is {self.coord}, which is in the {self.concode}.")
-        time.sleep(0.3)
-        enter()
+        if not self.city_name and not self.city_id:
+            print("You first need to set a locale to view it's information.")
+            return enter()
+        else:
+            # this will display currently active location's data
+            print(f"Currently, our saved city is {self.city_name}.")
+            time.sleep(0.3)
+            print(f"The city of {self.city_name} is coded as Id#: {self.city_id}.")
+            time.sleep(0.3)
+            print(f"The lat-long is {self.coord}, which is in the {self.concode}.")
+            time.sleep(0.3)
+            enter()
 
     def quick_weather(self):
         # this will be the quick weather details printer
-        time.sleep(0.3)
-        print(
-            f"It is currently {self.weather[1]['description']} in the {self.city_name} area. It is {self.temp} degrees, feeling like an average {self.feels} degrees."
-        )
-        time.sleep(0.3)
-        enter()
+        if not self.city_id and not self.city_name:
+            print("You need to set a locale before you can get quick stats")
+            return enter()
+        else:
+            time.sleep(0.3)
+            print(
+                f"It is currently {self.weather[1]['description']} in the {self.city_name} area. It is {self.temp} degrees, feeling like    an average {self.feels} degrees."
+            )
+            time.sleep(0.3)
+            enter()
 
     def display_weather(self):
-        # this will be the detailed weather printer
-        time.sleep(0.3)
-        print(f"It is {self.time} in {self.city_name} on {self.date}.\n")
-        time.sleep(0.3)
-        print(
-            f"We have {self.weather[1]['description']} with a temperature of {self.temp} degrees, though it feels like {self.feels} degrees.\n"
-        )
-        time.sleep(0.3)
-        print(f"The high for today is {self.max} with a low of {self.min} degrees.\n")
-        time.sleep(0.3)
-        print(
-            f"Humidity is at {self.humidity}% with an atmospheric pressure of {self.pressure} hPa.\n"
-        )
-        time.sleep(0.3)
-        if self.gust:
-            gusts = f"Gusts are up to {self.gust} mpg."
+        if not self.city_id and not self.city_name:
+            print("You first need to select a locale to see it's weather.")
+            return enter()
         else:
-            gusts = "There are no gusts at this hour."
-        print(
-            f"We have a {self.wind_dir} wind blowing at {self.wind_speed} mph. {gusts}\n"
-        )
-        time.sleep(0.3)
-        print(
-            f"Cloud cover is at {self.cloudiness}%, and visibility is pegged at approximately {self.visibility} km.\n"
-        )
-        time.sleep(0.3)
-        print(
-            f"Expected sunrise and sunset times today are {self.sunrise} and {self.sunset}, respectively.\n"
-        )
-        time.sleep(0.3)
-        enter()
+            # this will be the detailed weather printer
+            time.sleep(0.3)
+            print(f"It is {self.time} in {self.city_name} on {self.date}.\n")
+            time.sleep(0.3)
+            print(
+                f"We have {self.weather[1]['description']} with a temperature of {self.temp} degrees, though it feels like {self.feels} degrees.\n"
+            )
+            time.sleep(0.3)
+            print(
+                f"The high for today is {self.max} with a low of {self.min} degrees.\n"
+            )
+            time.sleep(0.3)
+            print(
+                f"Humidity is at {self.humidity}% with an atmospheric pressure of {self.pressure} hPa.\n"
+            )
+            time.sleep(0.3)
+            if self.gust:
+                gusts = f"Gusts are up to {self.gust} mpg."
+            else:
+                gusts = "There are no gusts at this hour."
+            print(
+                f"We have a {self.wind_dir} wind blowing at {self.wind_speed} mph. {gusts}\n"
+            )
+            time.sleep(0.3)
+            print(
+                f"Cloud cover is at {self.cloudiness}%, and visibility is pegged at approximately {self.visibility} km.\n"
+            )
+            time.sleep(0.3)
+            print(
+                f"Expected sunrise and sunset times today are {self.sunrise} and {self.sunset}, respectively.\n"
+            )
+            time.sleep(0.3)
+            enter()
 
     def name_search(self):
         # named search handler.  This works just about as well as geocoord searching.  This is probably a little more accurate, but
