@@ -27,6 +27,8 @@ from dotenv import load_dotenv, find_dotenv
 # load and define global constants
 load_dotenv(find_dotenv())
 API = str(os.environ.get("API"))
+# note, this code will fail without an API key either hardcoded and uncommented below, or in a .env file
+# API = ""
 
 
 class Menu(object):
@@ -44,12 +46,14 @@ class Menu(object):
         self.options = self.master_menu[self.current].keys()
 
     def navigate(self):
+        # this is bread and butter of the menu system.  It all stems from here.
         self.navigating = True
         self.build_menu()
         selection = input("Your selection?\n> ")
         return self.select(selection)
 
     def select(self, selection):
+        # handler for menu selection
         try:
             sel = int(selection)
             itr = 0
@@ -112,6 +116,7 @@ class Menu(object):
             return self.navigate()
 
     def build_menu(self):
+        # menu building handler
         print(f"{self.current} Menu:")
         if not self.treed:
             mn = 1
@@ -155,6 +160,7 @@ class Menu(object):
                                 return
 
     def exit_program(self):
+        # exit program handler
         msg = "Are you sure you'd like to exit the program?"
         if get_yn(msg):
             self.navigating = False
@@ -167,8 +173,10 @@ class Menu(object):
 
 class Locale(object):
     # creating a locale object to store information
-    city_name = str(os.environ.get("CITYNAME"))
-    city_id = int(os.environ.get("CITYID"))
+    city_name = ""
+    city_id = ""
+    # city_name = str(os.environ.get("CITYNAME"))
+    # city_id = int(os.environ.get("CITYID"))
     gust = None
     zip_code = None
     search = False
@@ -176,8 +184,11 @@ class Locale(object):
     query = None
 
     def __init__(self):
-        data = self.scrape()
-        self.update(data)
+        if not self.city_id and not self.city_name:
+            pass
+        else:
+            data = self.scrape()
+            self.update(data)
 
     def update(self, js):
         # takes the unparsed scrape and fits it to our object
@@ -316,59 +327,74 @@ class Locale(object):
             self.date, self.time = get_time(timezone)
 
     def display_location(self):
-        # this will display currently active location's data
-        print(f"Currently, our saved city is {self.city_name}.")
-        time.sleep(0.3)
-        print(f"The city of {self.city_name} is coded as Id#: {self.city_id}.")
-        time.sleep(0.3)
-        print(f"The lat-long is {self.coord}, which is in the {self.concode}.")
-        time.sleep(0.3)
-        enter()
+        if not self.city_name and not self.city_id:
+            print("You first need to set a locale to view it's information.")
+            return enter()
+        else:
+            # this will display currently active location's data
+            print(f"Currently, our saved city is {self.city_name}.")
+            time.sleep(0.3)
+            print(f"The city of {self.city_name} is coded as Id#: {self.city_id}.")
+            time.sleep(0.3)
+            print(f"The lat-long is {self.coord}, which is in the {self.concode}.")
+            time.sleep(0.3)
+            enter()
 
     def quick_weather(self):
         # this will be the quick weather details printer
-        time.sleep(0.3)
-        print(
-            f"It is currently {self.weather[1]['description']} in the {self.city_name} area. It is {self.temp} degrees, feeling like an average {self.feels} degrees."
-        )
-        time.sleep(0.3)
-        enter()
+        if not self.city_id and not self.city_name:
+            print("You need to set a locale before you can get quick stats")
+            return enter()
+        else:
+            time.sleep(0.3)
+            print(
+                f"It is currently {self.weather[1]['description']} in the {self.city_name} area. It is {self.temp} degrees, feeling like    an average {self.feels} degrees."
+            )
+            time.sleep(0.3)
+            enter()
 
     def display_weather(self):
-        # this will be the detailed weather printer
-        time.sleep(0.3)
-        print(f"It is {self.time} in {self.city_name} on {self.date}.\n")
-        time.sleep(0.3)
-        print(
-            f"We have {self.weather[1]['description']} with a temperature of {self.temp} degrees, though it feels like {self.feels} degrees.\n"
-        )
-        time.sleep(0.3)
-        print(f"The high for today is {self.max} with a low of {self.min} degrees.\n")
-        time.sleep(0.3)
-        print(
-            f"Humidity is at {self.humidity}% with an atmospheric pressure of {self.pressure} hPa.\n"
-        )
-        time.sleep(0.3)
-        if self.gust:
-            gusts = f"Gusts are up to {self.gust} mpg."
+        if not self.city_id and not self.city_name:
+            print("You first need to select a locale to see it's weather.")
+            return enter()
         else:
-            gusts = "There are no gusts at this hour."
-        print(
-            f"We have a {self.wind_dir} wind blowing at {self.wind_speed} mph. {gusts}\n"
-        )
-        time.sleep(0.3)
-        print(
-            f"Cloud cover is at {self.cloudiness}%, and visibility is pegged at approximately {self.visibility} km.\n"
-        )
-        time.sleep(0.3)
-        print(
-            f"Expected sunrise and sunset times today are {self.sunrise} and {self.sunset}, respectively.\n"
-        )
-        time.sleep(0.3)
-        enter()
+            # this will be the detailed weather printer
+            time.sleep(0.3)
+            print(f"It is {self.time} in {self.city_name} on {self.date}.\n")
+            time.sleep(0.3)
+            print(
+                f"We have {self.weather[1]['description']} with a temperature of {self.temp} degrees, though it feels like {self.feels} degrees.\n"
+            )
+            time.sleep(0.3)
+            print(
+                f"The high for today is {self.max} with a low of {self.min} degrees.\n"
+            )
+            time.sleep(0.3)
+            print(
+                f"Humidity is at {self.humidity}% with an atmospheric pressure of {self.pressure} hPa.\n"
+            )
+            time.sleep(0.3)
+            if self.gust:
+                gusts = f"Gusts are up to {self.gust} mpg."
+            else:
+                gusts = "There are no gusts at this hour."
+            print(
+                f"We have a {self.wind_dir} wind blowing at {self.wind_speed} mph. {gusts}\n"
+            )
+            time.sleep(0.3)
+            print(
+                f"Cloud cover is at {self.cloudiness}%, and visibility is pegged at approximately {self.visibility} km.\n"
+            )
+            time.sleep(0.3)
+            print(
+                f"Expected sunrise and sunset times today are {self.sunrise} and {self.sunset}, respectively.\n"
+            )
+            time.sleep(0.3)
+            enter()
 
     def name_search(self):
-        # named search handler
+        # named search handler.  This works just about as well as geocoord searching.  This is probably a little more accurate, but
+        # both are quite valid search methods.
         msg = "Are you looking up a city in the US?"
         if get_yn(msg):
 
@@ -416,7 +442,8 @@ class Locale(object):
                 return
 
     def cid_search(self):
-        # city id # search handler thing
+        # city id # search handler thing.  This is the single most reliable search method, provided you know open weather's
+        # city codes.  I should include that with a quick "inspect locale" feature/function...
         cid = ""
         while not cid:
             cid = input(werder("cid"))
@@ -456,6 +483,11 @@ class Locale(object):
 
     def zip_search(self):
         # zip search handler
+        # regardless of how I do it, even just using raw browser connection, I could not get a single city to pop using zip codes
+        # I don't know if they just created an error during their last update, cause I do remember having done it when I first looked
+        # at the API documentation...I don't remember what zip I used at that time, though.  Nothing, including ones I've found on
+        # forums talking about this issue that users said worked for them, haven't worked for me.  Strange...will monitor
+
         print(
             "Quick disclaimer: Open Weather does not like to search by zip codes, for some reason.  I don't quite understand what their problem is, but there's only a few zip codes they like."
         )
@@ -463,7 +495,7 @@ class Locale(object):
         msg = "Are you looking up a city in the US?"
         if get_yn(msg):
             czip = ""
-            while not czip:
+            while not czip or len(czip) < 4:
                 czip = input(werder("ciz"))
             country = "us"
 
@@ -508,13 +540,13 @@ class Locale(object):
                 return
 
     def geo_search(self):
-        # geocoord search handler thing
-        lat = input("The Latitude?")
+        # geocoord search handler thing, works better than zip codes, for some reason
+        lat = ""
         while not lat:
-            lat = input("The Latitude?")
-        lon = input("The Longitude?")
+            lat = input("The Latitude?\n> ")
+        lon = ""
         while not lon:
-            lon = input("The Longitude?")
+            lon = input("The Longitude?\n> ")
 
         try:
             float(lat)
@@ -605,12 +637,13 @@ class Locale(object):
                 while r.status_code == requests.codes.ok:  # pylint: disable=no-member
                     data = json.loads(r.text)
                     # for testing purposes, we will save these results to a file for now.
-                    # un-comment for useage
-                    with open("weather.json", "w") as f:
-                        json.dump(data, f, indent=4)
+                    # comment before turning in...otherwise, it may spit an error at the prof
+                    # with open("weather.json", "w") as f:
+                    #    json.dump(data, f, indent=4)
                     break
                 return data
             except requests.exceptions.HTTPError:
+                # we're just going to use requests' prebuild exceptions to handle
                 attempt += 1
                 msg = f"Search was unsuccessful on account of code {r.status_code}. Try connection again?"
                 if get_yn(msg):
@@ -618,6 +651,8 @@ class Locale(object):
                 else:
                     return False
             except:
+                # a non-HTTP error has occured, but can't think of what'd kick an error
+                # Prolly certain types of returned data?
                 print(
                     "We may have broken something...or someone may actually be a teapot...hang on..."
                 )
@@ -627,6 +662,7 @@ class Locale(object):
                 attempt += 1
                 return self.scrape(attempt)
         else:
+            # if we get here, chances are there was a bad request, but whatev
             print(
                 f"I'm not sure what's going wrong, here, but we have had a SERIOUS series of errors."
             )
@@ -638,6 +674,8 @@ def enter():
 
 
 def get_time(timezone):
+    # quick little function to apply same type of unix handling to our times as the ones
+    # passed, just to help ensure our times are all jiving
     dt = datetime.now()
     unix = int(time.mktime(dt.timetuple()))
     utc = unix + timezone
@@ -648,7 +686,7 @@ def get_time(timezone):
 
 
 def flatten(current, key="", result={}):
-    # quick function to "flatten" the json to a singular k/v dictionary
+    # quick function to "flatten" the json to a singular k/v dictionary JSON style
     iter = 0
     if isinstance(current, dict):
         for k, v in current.items():
@@ -666,6 +704,8 @@ def flatten(current, key="", result={}):
 
 
 def not_implemented():
+    # place-holder for future expansion and reminder of gaps - All req's will be completed, none of the
+    # base req's can have this holder
     print(
         "Sorry, that feature hasn't been built-out yet. Check back, and it may be.\nCheers!"
     )
@@ -673,6 +713,7 @@ def not_implemented():
 
 
 def werder(werds):
+    # got tired of typing questions, so I tried to speed things up a bit using "reel werds"
     msg1 = "What is the "
     msg2 = "city's "
     msg3 = "name"
@@ -720,7 +761,10 @@ def get_yn(prompt):
         return get_yn(err)
 
 
+# initialize and grab first pull of data from open weather
 local = Locale()
+
+# prebuilt dictionary of menu tree and commands
 menu_dict = {
     "Main": {
         "Quick Weather": local.quick_weather,
@@ -744,6 +788,7 @@ menu_dict = {
     }
 }
 
+# start up Menu class and pass prebuilt menu dictionary
 menu = Menu("Main", menu_dict)
 
 # technically the beginning of the program

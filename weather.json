@@ -8,30 +8,30 @@
             "id": 501,
             "main": "Rain",
             "description": "moderate rain",
-            "icon": "10d"
+            "icon": "10n"
         }
     ],
     "base": "stations",
     "main": {
-        "temp": 36.41,
-        "feels_like": 25.75,
-        "temp_min": 35.01,
+        "temp": 36.48,
+        "feels_like": 26.58,
+        "temp_min": 35.6,
         "temp_max": 37.4,
         "pressure": 1009,
         "humidity": 86
     },
     "visibility": 10000,
     "wind": {
-        "speed": 12.75,
-        "deg": 20
+        "speed": 11.41,
+        "deg": 30
     },
     "rain": {
-        "1h": 1.15
+        "1h": 1.33
     },
     "clouds": {
         "all": 90
     },
-    "dt": 1607726467,
+    "dt": 1607728248,
     "sys": {
         "type": 1,
         "id": 5175,
