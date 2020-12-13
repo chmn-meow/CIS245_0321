@@ -25,10 +25,15 @@ from datetime import datetime
 from dotenv import load_dotenv, find_dotenv
 
 # load and define global constants
+# A .ENV file is REQUIRED if the following is uncommented - to fix, comment out and uncomment and at minimum, fill in API key
 load_dotenv(find_dotenv())
 API = str(os.environ.get("API"))
-# note, this code will fail without an API key either hardcoded and uncommented below, or in a .env file
+# CITYNAME = str(os.environ.get("CITYNAME"))
+# CITYID = int(os.environ.get("CITYID"))
+#
 # API = ""
+CITYNAME = ""
+CITYID = 0
 
 
 class Menu(object):
@@ -173,8 +178,17 @@ class Menu(object):
 
 class Locale(object):
     # creating a locale object to store information
-    city_name = ""
-    city_id = ""
+    if not CITYID or not CITYNAME:
+        city_name = ""
+        city_id = 0
+    elif CITYID or CITYNAME:
+        if CITYID:
+            city_id = CITYID
+        if CITYNAME:
+            city_name = CITYNAME
+    else:
+        pass
+
     # city_name = str(os.environ.get("CITYNAME"))
     # city_id = int(os.environ.get("CITYID"))
     gust = None
@@ -348,7 +362,7 @@ class Locale(object):
         else:
             time.sleep(0.3)
             print(
-                f"It is currently {self.weather[1]['description']} in the {self.city_name} area. It is {self.temp} degrees, feeling like    an average {self.feels} degrees."
+                f"It is currently {self.weather[1]['description']} in the {self.city_name} area. It is {self.temp} degrees, feeling like an average {self.feels} degrees."
             )
             time.sleep(0.3)
             enter()
