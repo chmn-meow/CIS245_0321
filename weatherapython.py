@@ -416,7 +416,7 @@ class Locale(object):
             while not city:
                 city = input(werder("cin"))
             state = ""
-            while len(state) > 2 or not state:
+            while len(state) != 2 or not state:
                 state = input(werder("sin"))
             country = "us"
 
@@ -438,7 +438,7 @@ class Locale(object):
             while not city:
                 city = input(werder("cin"))
             country = ""
-            while len(country) > 2 or not country:
+            while len(country) != 2 or not country:
                 country = input(werder("coin"))
 
             query = f"{city.title()}, {country.upper()}"
@@ -466,7 +466,7 @@ class Locale(object):
             int(cid)
         except ValueError:
             print("Sorry, you didn't type only numbers for that.  Please try again!")
-            return self.zip_search()
+            return self.cid_search()
         query = f"{cid}"
         verify = get_yn(f"You said {query}, is that right?")
         if verify:
@@ -509,7 +509,7 @@ class Locale(object):
         msg = "Are you looking up a city in the US?"
         if get_yn(msg):
             czip = ""
-            while not czip or len(czip) < 4:
+            while not czip or len(czip) != 5:
                 czip = input(werder("ciz"))
             country = "us"
 
