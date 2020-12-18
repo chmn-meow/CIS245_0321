@@ -786,8 +786,8 @@ menu_dict = {
         "View Current Locale": {
             "View Locale Information": local.display_location,
             "View Today's Detailed Forecast": local.display_weather,
-            "View 5-day Forecast": not_implemented,
-            "View Weather History": not_implemented,
+            # "View 5-day Forecast": not_implemented,
+            # "View Weather History": not_implemented,
             "Main Menu": "upone",
             "Exit Program": "exit",
         },
