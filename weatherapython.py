@@ -27,13 +27,13 @@ from dotenv import load_dotenv, find_dotenv
 # load and define global constants
 # A .ENV file is REQUIRED if the following is uncommented - to fix, comment out and uncomment and at minimum, fill in API key
 load_dotenv(find_dotenv())
-API = str(os.environ.get("API"))
+# API = str(os.environ.get("API"))
 # CITYNAME = str(os.environ.get("CITYNAME"))
 # CITYID = int(os.environ.get("CITYID"))
 #
-# API = ""
-CITYNAME = ""
-CITYID = 0
+API = "a961ac12c0e919ebabe0143698ec7832"
+CITYNAME = "Bellevue"
+CITYID = 5063805
 
 
 class Menu(object):
@@ -294,7 +294,9 @@ class Locale(object):
                     elif key == "snow":
                         self.snow = value
                     elif key == "sys":
-                        self.concode = value["country"]
+                        for k, v in value.items():
+                            if k == "country":
+                                self.concode = v
                         utc_sunrise = value["sunrise"]
                         utc_sunset = value["sunset"]
                     else:
@@ -342,7 +344,9 @@ class Locale(object):
 
     def display_location(self):
         if not self.city_name and not self.city_id:
-            print("You first need to set a locale to view it's information.")
+            print(
+                "You first need to set the locale to view it's information. If you didn't get a city from lat/long, try a different coordinate."
+            )
             return enter()
         else:
             # this will display currently active location's data
@@ -511,7 +515,6 @@ class Locale(object):
             czip = ""
             while not czip or len(czip) != 5:
                 czip = input(werder("ciz"))
-            country = "us"
 
             try:
                 int(czip)
@@ -520,14 +523,12 @@ class Locale(object):
                     "Sorry, you didn't type only numbers for that.  Please try again!"
                 )
                 return self.zip_search()
-
-            query = f"{czip}, {country.upper()}"
-            verify = get_yn(f"You said {query}, is that right?")
+            verify = get_yn(f"You said {czip}, is that right?")
 
             if verify:
                 self.search = True
                 self.s_type = "zip"
-                self.query = query
+                self.query = czip
                 data = self.scrape()
                 if not data:
                     print(
@@ -659,7 +660,7 @@ class Locale(object):
             except requests.exceptions.HTTPError:
                 # we're just going to use requests' prebuild exceptions to handle
                 attempt += 1
-                msg = f"Search was unsuccessful on account of code {r.status_code}. Try connection again?"
+                msg = f"Search was unsuccessful on account of a code {r.status_code}. Try connection again?"
                 if get_yn(msg):
                     return self.scrape(attempt)
                 else:
